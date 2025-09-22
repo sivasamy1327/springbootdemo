@@ -1,0 +1,24 @@
+SELECT 
+    t.id,
+    t.origin_location,
+    t.destination_location,
+    t.status,
+    t.created_date,
+    t.updated_date,
+    t.type,
+    tli.id as line_item_id,
+    tli.item_type,
+    tli.quantity,
+    tli.status as line_item_status
+FROM transfer_orders t
+INNER JOIN to_line_items tli ON t.id = tli.to_id
+WHERE t.status = 'OPEN'
+  AND tli.status = 'CREATED'
+  AND (
+    -- Standard TOs: destination matches SA change location
+    (t.type = 'CT' AND t.destination_location = ?)
+    OR
+    -- IRFS TOs: destination matches SA change origin (reverse movement)
+    (t.type = 'IRFS' AND t.destination_location = ?)
+  )
+ORDER BY t.created_date DESC, t.id, tli.id;
